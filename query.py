@@ -17,6 +17,14 @@ def query(stopwords, inverted_index, title):
     inverted = json.load(file)
     file.close()
 
+    file=open(title,'r')
+    titleDict = json.load(file)
+    file.close()
+
+    file=open("tf_index.json",'r')
+    tf_index=json.load(file)
+    file.close()
+
     #while this is true (it's always true)
     while 1:
         try:
@@ -25,7 +33,7 @@ def query(stopwords, inverted_index, title):
             query = input( )
             query = QueryFactory.create(query)
             #Ouery Output
-            print(*query.match(inverted, stopwords))
+            print(*query.match(inverted, stopwords,titleDict,tf_index))
 
         except EOFError:  # Catch the Ctrl-D
             print ('\n')

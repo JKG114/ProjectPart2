@@ -149,6 +149,9 @@ if namespace == '' :
     #these dictionaries will have page ids as keys and the words location in the page as values
 word_dict = {}
 title_dict = {}
+tf = {}
+N=len(pages)
+
 for page in pages:
     words = page[2][0]
     id = page[0][0]
@@ -158,10 +161,17 @@ for page in pages:
         if words[loc] in word_dict.keys():
                 if id in word_dict[words[loc]].keys():
                     word_dict[words[loc]][id].append(loc)
+                    tf[words[loc]][id]+=1
                 else:
                     word_dict[words[loc]][id] = [loc]
+                    tf[words[loc]][id]=1
         else:
             word_dict[words[loc]]= {id: [loc]}
+            tf[words[loc]]={id: 1}
+
+#idf = {}
+#for word in word_dict.keys():
+#    idf[word]=math.log(N/len(word_dict[word].keys()),10)
 
 inverted = open(inverted_index, 'w')
 json.dump(word_dict, inverted)
@@ -170,3 +180,11 @@ inverted.close()
 title_in = open(title_index, 'w')
 json.dump(title_dict, title_in)
 title_in.close()
+
+#idf_in = open("idf.json", 'w')
+#json.dump(idf,idf_in)
+#idf_in.close()
+
+tf_in = open("tf_index.json","w")
+json.dump(tf,tf_in)
+tf_in.close()

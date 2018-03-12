@@ -12,6 +12,8 @@
 # Modified: 02/2018 for data2040
 
 from typing import Union
+from math import *
+from operator import itemgetter
 
 import pyparsing
 
@@ -225,7 +227,7 @@ def match_bool(bool_exp, index):
                 else:
                     ids = list(set(ids) | set(index[bool_exp[1][i]].keys()))
 
-    ids = ids = list(map(int, ids))
+    ids = ids = list(set(map(int, ids)))
     ids.sort()
     return ids
 
@@ -238,6 +240,37 @@ class Query:
     def print_query(self):
         print("Find: " + self.query)
 
+    def calcQueryWeight(self,index,title,tokens):
+        idf=[]
+        for token in tokens:
+            #print(token,math.log10(10))
+            idf.append(log10(len(title)/len(index[token])))
+        return idf
+
+    def calcDocWeight(self, tokens, docID, tf_index, idf_vector):
+        tf_vector=[]
+        #print('tokens:',tokens, "docID:",str(docID))
+        for token in tokens:
+            #print(tf_index[token])
+            #print('tf_idnex[token]str(Docid)',tf_index[token][str(docID)])
+            if(str(docID) in tf_index[token].keys()):
+                tf_vector.append(tf_index[token][str(docID)])
+            else: tf_vector.append(0)
+
+        tf_mag=0
+        idf_mag=0
+        for i in range(len(tf_vector)):
+            tf_mag+=pow(tf_vector[i],2)
+            idf_mag+=pow(idf_vector[i],2)
+        tf_mag=pow(tf_mag,0.5)
+        idf_mag=pow(idf_mag,0.5)
+
+        idf_vector=[(x/idf_mag) for x in idf_vector]
+        tf_vector=[(x/tf_mag) for x in tf_vector]
+
+        return sum([x*y for x,y in zip(tf_vector,idf_vector)])
+
+
 
 # YOUR ONEWORDQUERY CLASS BELOW
 class OneWordQuery(Query):
@@ -245,12 +278,13 @@ class OneWordQuery(Query):
         super().__init__(query)
         # finds list of page ids for pages that contain query
 
-    def match(self, index, stopwords):
+    def match(self, index, stopwords, title, tf_index):
         # Make query lowercase
         query_string = self.query.lower()
 
         # Remove non-alphanumeric characters
         query_string = filter_and_stem([query_string],stopwords)[0]
+        idf_vector=self.calcQueryWeight(index,title,[query_string])
 
         if query_string == '':
             return ''
@@ -258,6 +292,12 @@ class OneWordQuery(Query):
             query_ids = list(index[query_string].keys())
             query_ids = list(map(int, query_ids))
             query_ids.sort()
+            results=[]
+            #print(ids)
+            for ourID in query_ids:
+                results.append((ourID,self.calcDocWeight([query_string], ourID, tf_index, idf_vector)))
+            results=sorted(results,key=itemgetter(1))
+            return [x[0] for x in results]
             return query_ids
 
 
@@ -265,7 +305,7 @@ class FreeTextQuery(Query):
     def __init__(self, query):
         super().__init__(query)
 
-    def match(self, index, stopwords):
+    def match(self, index, stopwords, title, tf_index):
         # Make qery lowercase
         query_string = self.query.lower()
 
@@ -276,13 +316,22 @@ class FreeTextQuery(Query):
         queries = filter_and_stem(queries, stopwords)
         # take the query words in the index and get the set of corresponding page ids
         queries = [query_word for query_word in queries if query_word in index.keys()]
+
+        idf_vector=self.calcQueryWeight(index,title,queries)
+
         ids = [list(index[query_word].keys()) for query_word in queries]
         ids = list(itertools.chain.from_iterable(ids))
         ids = set(ids)
         ids = list(ids)
         ids = list(map(int, ids))
         ids.sort()
-        return ids
+        results=[]
+        #print(ids)
+        for ourID in ids:
+            results.append((ourID,self.calcDocWeight(queries, ourID, tf_index, idf_vector)))
+
+        results=sorted(results,key=itemgetter(1))
+        return [x[0] for x in results]
 
 
 # YOUR PHRASEQUERY CLASS BELOW
@@ -291,7 +340,7 @@ class PhraseQuery(Query):
     def __init__(self, query):
         super().__init__(query)
 
-    def match(self, index, stopwords):
+    def match(self, index, stopwords, title, tf_index):
         # remove double quotes, convert to lowercase, obtain tokens
         query_string = self.query[1:]
         query_string = query_string[:-1]
@@ -301,11 +350,16 @@ class PhraseQuery(Query):
         # filter stop words and stem
         queries = filter_and_stem(queries, stopwords)
 
+        idf_vector=self.calcQueryWeight(index,title,queries)
         dicts = [index[query_word] for query_word in queries]
 
         if len(dicts) == len(queries):
             ids = phrase_words(dicts)
-            return ids
+            results=[]
+            for ourID in ids:
+                results.append((ourID,self.calcDocWeight(queries, ourID, tf_index, idf_vector)))
+            results=sorted(results,key=itemgetter(1))
+            return [x[0] for x in results]
         else:
             #will never enter this else statement, but you know...compulsion.
             return ''
@@ -317,14 +371,30 @@ class BooleanQuery(Query):
     def __init__(self, query):
         super().__init__(query)
 
-    def match(self, index, stopwords):
+    def getTokens(self,bool_exp):
+        tokens=[]
+        for i in range(len(bool_exp[1])):
+            if type(bool_exp[1][i]) == tuple:
+                temp=self.getTokens(bool_exp[1][i])
+                for x in temp:
+                    tokens.append(x)
+            else:
+                tokens.append(bool_exp[1][i])
+            #print("clean print:", bool_exp[1][i])
+        return tokens
+
+    def match(self, index, stopwords, title, tf_index):
 
         # Converty the Query to AST
         bool_exp = bool_expr_ast(self.query)
 
         # Clean the query (remove stopwords, stem, etc.)
         bool_exp = clean(bool_exp, stopwords)
+        tokens=self.getTokens(bool_exp)
+        print(tokens)
+
         ids = match_bool(bool_exp, index)
+        print(ids)
         ids.sort()
         return ids
 
@@ -347,4 +417,3 @@ class QueryFactory:
             return FreeTextQuery(query_string)
         else:
             raise ValueError('This query string is not supported.')
-
