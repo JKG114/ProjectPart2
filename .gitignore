@@ -1,0 +1,6 @@
+*.json
+*.xml
+*.dat
+__pycache__/
+*.pyo
+*.pyc
