@@ -7,10 +7,22 @@ from QueryClass import FreeTextQuery
 import json
 import re
 import sys
+import argparse
 
-stopwords = sys.argv[1]
-inverted_index = sys.argv[2]
-title = sys.argv[3]
+parser = argparse.ArgumentParser()
+parser.add_argument('stopwords')
+parser.add_argument('index')
+parser.add_argument('title')
+parser.add_argument('-t',action='store_true')
+parser.add_argument('-v',action='store_true')
+
+args = parser.parse_args()
+
+stopwords = args.stopwords
+inverted_index = args.index
+title = args.title
+
+
 def query(stopwords, inverted_index, title):
     #Open inverted index and create corresponding dictionary
     file = open(inverted_index, 'r')
@@ -28,12 +40,25 @@ def query(stopwords, inverted_index, title):
     #while this is true (it's always true)
     while 1:
         try:
-
             #Take Query input
             query = input( )
             query = QueryFactory.create(query)
             #Ouery Output
-            print(*query.match(inverted, stopwords,titleDict,tf_index))
+            id_list=query.match(inverted, stopwords,titleDict,tf_index)
+            if args.t is True:
+                #just titles
+                id_list=[f'"{titleDict[str(x[0])]}"' for x in id_list]
+                print(*id_list)
+            elif args.v is True:
+                #title,weight pairs
+                for pair in id_list:
+                    pageTitle=f'"{titleDict[str(pair[0])]}"'
+                    print(pageTitle, end=' ')
+                    print(pair[1])
+            else:
+                #ids
+                id_list=[x[0] for x in id_list]
+                print(*id_list)
 
         except EOFError:  # Catch the Ctrl-D
             print ('\n')

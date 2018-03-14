@@ -297,8 +297,8 @@ class OneWordQuery(Query):
             for ourID in query_ids:
                 results.append((ourID,self.calcDocWeight([query_string], ourID, tf_index, idf_vector)))
             results=sorted(results,key=itemgetter(1))
-            return [x[0] for x in results]
-            return query_ids
+            #return [x[0] for x in results]
+            return results
 
 
 class FreeTextQuery(Query):
@@ -331,7 +331,8 @@ class FreeTextQuery(Query):
             results.append((ourID,self.calcDocWeight(queries, ourID, tf_index, idf_vector)))
 
         results=sorted(results,key=itemgetter(1))
-        return [x[0] for x in results]
+        #return [x[0] for x in results]
+        return results
 
 
 # YOUR PHRASEQUERY CLASS BELOW
@@ -359,7 +360,8 @@ class PhraseQuery(Query):
             for ourID in ids:
                 results.append((ourID,self.calcDocWeight(queries, ourID, tf_index, idf_vector)))
             results=sorted(results,key=itemgetter(1))
-            return [x[0] for x in results]
+            #return [x[0] for x in results]
+            return results
         else:
             #will never enter this else statement, but you know...compulsion.
             return ''
@@ -390,13 +392,16 @@ class BooleanQuery(Query):
 
         # Clean the query (remove stopwords, stem, etc.)
         bool_exp = clean(bool_exp, stopwords)
-        tokens=self.getTokens(bool_exp)
-        print(tokens)
-
+        queries=self.getTokens(bool_exp)
+        idf_vector=self.calcQueryWeight(index,title,queries)
         ids = match_bool(bool_exp, index)
-        print(ids)
-        ids.sort()
-        return ids
+
+        results=[]
+        for ourID in ids:
+            results.append((ourID,self.calcDocWeight(queries, ourID, tf_index, idf_vector)))
+        results=sorted(results,key=itemgetter(1))
+        #return [x[0] for x in results]
+        return results
 
 
 #YOUR QUERYFACTORY BELOW
