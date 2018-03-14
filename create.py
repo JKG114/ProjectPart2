@@ -35,7 +35,12 @@ stop_pattern = re.compile("\\b(%s)\\b" %stop_words, re.I)
 
 
 # initate the xml tree
-tree = ET.parse(collection)
+try:
+    tree = ET.parse(collection)
+except ET.ParseError:
+    print("ERROR: Bad XML File encountered. Exiting...")
+    exit()
+
 root = tree.getroot()
 
 #default

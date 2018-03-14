@@ -105,6 +105,8 @@ def filter_and_stem(queries, stopwords):
     queries = [x.strip(' ') for x in queries]
     queries = list(filter(None, queries))
     queries = [stemmer.stem(query_word) for query_word in queries]
+    if not queries:
+        print("ERROR: Query only contained stopwords/non-alphanumerics",end='')
     return(queries)
 
 
@@ -192,7 +194,6 @@ def phrase_words(dicts):
 def match_bool(bool_exp, index):
     '''Takes an AST expression and an index and returns the page ids that meet the bool criteria'''
     ids = []
-
     for i in range(len(bool_exp[1])):
        #print(bool_exp[1][i])
 
@@ -281,9 +282,9 @@ class OneWordQuery(Query):
     def match(self, index, stopwords, title, tf_index, idf_index):
         # Make query lowercase
         query_string = self.query.lower()
-
         # Remove non-alphanumeric characters
         query_string = filter_and_stem([query_string],stopwords)[0]
+
         idf_vector=[float(idf_index[query_string])]
 
         if query_string == '':
@@ -391,7 +392,7 @@ class BooleanQuery(Query):
 
         # Converty the Query to AST
         bool_exp = bool_expr_ast(self.query)
-
+        print(bool_exp)
         # Clean the query (remove stopwords, stem, etc.)
         bool_exp = clean(bool_exp, stopwords)
         queries=self.getTokens(bool_exp)
@@ -411,7 +412,11 @@ class BooleanQuery(Query):
 class QueryFactory:
     @staticmethod
     def create(query_string: str):
-        if not query_string:
+        if not query_string or not query_string.strip(' '):
+            print("ERROR: Empty query.",end='')
+            return None
+        if bool(query_string[0] == '"') != bool(query_string[-1] == '"'):
+            print("ERROR: Unpaired quotes in query.",end='')
             return None
         if query_string[0] == '"' and query_string[-1] == '"':
             return PhraseQuery(query_string)
