@@ -227,7 +227,7 @@ def match_bool(bool_exp, index):
                 else:
                     ids = list(set(ids) | set(index[bool_exp[1][i]].keys()))
 
-    ids = ids = list(set(map(int, ids)))
+    ids = ids = list(set(ids))
     ids.sort()
     return ids
 
@@ -240,12 +240,12 @@ class Query:
     def print_query(self):
         print("Find: " + self.query)
 
-    def calcQueryWeight(self,index,title,tokens):
-        idf=[]
-        for token in tokens:
-            #print(token,math.log10(10))
-            idf.append(log10(len(title)/len(index[token])))
-        return idf
+    # def calcQueryWeight(self,index,title,tokens):
+    #     idf=[]
+    #     for token in tokens:
+    #         #print(token,math.log10(10))
+    #         idf.append(log10(len(title)/len(index[token])))
+    #     return idf
 
     def calcDocWeight(self, tokens, docID, tf_index, idf_vector):
         tf_vector=[]
@@ -278,13 +278,13 @@ class OneWordQuery(Query):
         super().__init__(query)
         # finds list of page ids for pages that contain query
 
-    def match(self, index, stopwords, title, tf_index):
+    def match(self, index, stopwords, title, tf_index, idf_index):
         # Make query lowercase
         query_string = self.query.lower()
 
         # Remove non-alphanumeric characters
         query_string = filter_and_stem([query_string],stopwords)[0]
-        idf_vector=self.calcQueryWeight(index,title,[query_string])
+        idf_vector=[float(idf_index[query_string])]
 
         if query_string == '':
             return ''
@@ -296,7 +296,7 @@ class OneWordQuery(Query):
             #print(ids)
             for ourID in query_ids:
                 results.append((ourID,self.calcDocWeight([query_string], ourID, tf_index, idf_vector)))
-            results=sorted(results,key=itemgetter(1))
+            results=sorted(results,key=itemgetter(1),reverse=True)
             #return [x[0] for x in results]
             return results
 
@@ -305,7 +305,7 @@ class FreeTextQuery(Query):
     def __init__(self, query):
         super().__init__(query)
 
-    def match(self, index, stopwords, title, tf_index):
+    def match(self, index, stopwords, title, tf_index, idf_index):
         # Make qery lowercase
         query_string = self.query.lower()
 
@@ -317,7 +317,8 @@ class FreeTextQuery(Query):
         # take the query words in the index and get the set of corresponding page ids
         queries = [query_word for query_word in queries if query_word in index.keys()]
 
-        idf_vector=self.calcQueryWeight(index,title,queries)
+        idf_vector=[float(idf_index[x]) for x in queries]
+        #old_idf_vector=self.calcQueryWeight(index,title,queries)
 
         ids = [list(index[query_word].keys()) for query_word in queries]
         ids = list(itertools.chain.from_iterable(ids))
@@ -330,7 +331,7 @@ class FreeTextQuery(Query):
         for ourID in ids:
             results.append((ourID,self.calcDocWeight(queries, ourID, tf_index, idf_vector)))
 
-        results=sorted(results,key=itemgetter(1))
+        results=sorted(results,key=itemgetter(1),reverse=True)
         #return [x[0] for x in results]
         return results
 
@@ -341,7 +342,7 @@ class PhraseQuery(Query):
     def __init__(self, query):
         super().__init__(query)
 
-    def match(self, index, stopwords, title, tf_index):
+    def match(self, index, stopwords, title, tf_index, idf_index):
         # remove double quotes, convert to lowercase, obtain tokens
         query_string = self.query[1:]
         query_string = query_string[:-1]
@@ -351,7 +352,8 @@ class PhraseQuery(Query):
         # filter stop words and stem
         queries = filter_and_stem(queries, stopwords)
 
-        idf_vector=self.calcQueryWeight(index,title,queries)
+        #old_idf_vector=self.calcQueryWeight(index,title,queries)
+        idf_vector=[float(idf_index[x]) for x in queries]
         dicts = [index[query_word] for query_word in queries]
 
         if len(dicts) == len(queries):
@@ -359,7 +361,7 @@ class PhraseQuery(Query):
             results=[]
             for ourID in ids:
                 results.append((ourID,self.calcDocWeight(queries, ourID, tf_index, idf_vector)))
-            results=sorted(results,key=itemgetter(1))
+            results=sorted(results,key=itemgetter(1),reverse=True)
             #return [x[0] for x in results]
             return results
         else:
@@ -385,7 +387,7 @@ class BooleanQuery(Query):
             #print("clean print:", bool_exp[1][i])
         return tokens
 
-    def match(self, index, stopwords, title, tf_index):
+    def match(self, index, stopwords, title, tf_index, idf_index):
 
         # Converty the Query to AST
         bool_exp = bool_expr_ast(self.query)
@@ -393,13 +395,13 @@ class BooleanQuery(Query):
         # Clean the query (remove stopwords, stem, etc.)
         bool_exp = clean(bool_exp, stopwords)
         queries=self.getTokens(bool_exp)
-        idf_vector=self.calcQueryWeight(index,title,queries)
+        idf_vector=[float(idf_index[x]) for x in queries]
         ids = match_bool(bool_exp, index)
 
         results=[]
         for ourID in ids:
             results.append((ourID,self.calcDocWeight(queries, ourID, tf_index, idf_vector)))
-        results=sorted(results,key=itemgetter(1))
+        results=sorted(results,key=itemgetter(1),reverse=True)
         #return [x[0] for x in results]
         return results
 

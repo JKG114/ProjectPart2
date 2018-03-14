@@ -3,7 +3,10 @@ import xml.etree.ElementTree as ET
 import re
 from nltk.stem.porter import *
 import sys
+from math import *
+import time
 
+start_time=time.time()
 
 stopwords = sys.argv[1]
 collection = sys.argv[2]
@@ -150,7 +153,6 @@ if namespace == '' :
 word_dict = {}
 title_dict = {}
 tf = {}
-N=len(pages)
 
 for page in pages:
     words = page[2][0]
@@ -169,9 +171,10 @@ for page in pages:
             word_dict[words[loc]]= {id: [loc]}
             tf[words[loc]]={id: 1}
 
-#idf = {}
-#for word in word_dict.keys():
-#    idf[word]=math.log(N/len(word_dict[word].keys()),10)
+idf = {}
+N=len(title_dict)
+for word in word_dict.keys():
+    idf[word]=log10(N/len(word_dict[word].keys()))
 
 inverted = open(inverted_index, 'w')
 json.dump(word_dict, inverted)
@@ -181,10 +184,12 @@ title_in = open(title_index, 'w')
 json.dump(title_dict, title_in)
 title_in.close()
 
-#idf_in = open("idf.json", 'w')
-#json.dump(idf,idf_in)
-#idf_in.close()
+idf_in = open("idf_index.json", 'w')
+json.dump(idf,idf_in)
+idf_in.close()
 
 tf_in = open("tf_index.json","w")
 json.dump(tf,tf_in)
 tf_in.close()
+
+print("Took: %s seconds to run."% (time.time()-start_time))

@@ -37,6 +37,11 @@ def query(stopwords, inverted_index, title):
     tf_index=json.load(file)
     file.close()
 
+    file=open("idf_index.json",'r')
+    idf_index=json.load(file)
+    file.close()
+    #print(idf_index)
+
     #while this is true (it's always true)
     while 1:
         try:
@@ -44,7 +49,7 @@ def query(stopwords, inverted_index, title):
             query = input( )
             query = QueryFactory.create(query)
             #Ouery Output
-            id_list=query.match(inverted, stopwords,titleDict,tf_index)
+            id_list=query.match(inverted, stopwords,titleDict,tf_index,idf_index)
             if args.t is True:
                 #just titles
                 id_list=[f'"{titleDict[str(x[0])]}"' for x in id_list]
