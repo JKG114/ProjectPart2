@@ -5,7 +5,6 @@
 ### To create inverted index:
 ```
 python3 create.py stopwords collection index title
-
 ```
 * stopwords: location of stopwords file
 * collection: location of .xml collection
@@ -13,9 +12,9 @@ python3 create.py stopwords collection index title
 * title: location to write title index to
 
 ### To query from inverted index:
-'''
+```
 python3 query.py stopwords index title [-t] [-v]
-'''
+```
 * stopwords: location of stopwords file
 * index: location of inverted index
 * title: location of title index
