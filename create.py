@@ -7,31 +7,11 @@ from math import *
 import time
 import argparse
 
-start_time=time.time()
+def page_list(namespace, tree, stopwords):
+    # takes a namespace, a tree, and the stopwords file path
+    # Returns a list, pages, that will contain tuples of ids,titles,texts from each page in the xml document
 
-parser = argparse.ArgumentParser()
-parser.add_argument('stopwords')
-parser.add_argument('collection')
-parser.add_argument('index')
-parser.add_argument('title')
-
-args = parser.parse_args()
-
-stopwords = args.stopwords
-collection = args.collection
-inverted_index = args.index
-title_index = args.title
-
-def create(stopwords, collection, inverted_index, title_index):
-    # def create(stopwords, collection,inverted_index,title_index):
-    #initiate the porter stemmer to be uses below
-    stemmer = PorterStemmer()
-
-    #the non-alphanumeric characters that will be removed from all the text we get(we will sub anything
-    #in the set defined by 'pattern' out with the empty string: '')
-    pattern = re.compile('[\W_]+')
-
-    #open and get stop words using 'open' function and iterating through stopwords file
+    # The stop words to remove from the titles/text of the xml files
     stop_words = ''
     with open(stopwords, 'r') as stop:
         for line in stop:
@@ -40,48 +20,32 @@ def create(stopwords, collection, inverted_index, title_index):
     stop.close()
     stop_words = stop_words[:-1]
 
-    #Stop pattern, the set of stop-words to remove from the text of each page
-    stop_pattern = re.compile("\\b(%s)\\b" %stop_words, re.I)
+    # Stop pattern, the set of stop-words to remove from the text of each page
+    stop_pattern = re.compile("\\b(%s)\\b" % stop_words, re.I)
 
-
-    # initate the xml tree
-    try:
-        tree = ET.parse(collection)
-    except ET.ParseError:
-        print("ERROR: Bad XML File encountered. Exiting...")
-        exit()
-
-    root = tree.getroot()
-
-    #default
-    namespace = ''
-    # get the namespace from the xml
-    if bool(root.attrib):
-        start = root.tag.find('{')
-        end = root.tag.find('}') + 1
-        namespace = root.tag[start:end]
-
-
-    #A list that will contain tuples of ids,titles,texts from each page in the xml document
+    # the non-alphanumeric characters that will be removed from all the text we get(we will sub anything
+    # in the set defined by 'pattern' out with the empty string: '')
+    pattern = re.compile('[\W_]+')
+    #initiate the porter stemmer to be uses below
+    stemmer = PorterStemmer()
+    #Pages: a list that will contain tuples with Pageids, titles, and text
     pages = []
-
-
     if namespace != '':
         # get the title, id, and text for each page by iterating through
         # the page elements in the tree using the namespace obtained above.
         for page in tree.findall(namespace + 'page'):
-            #initiate empty lists to contain the page title, page id, and page text for
-            #each page
+            # initiate empty lists to contain the page title, page id, and page text for
+            # each page
             titles = []
             ids = []
             texts = []
-            #get the page title
+            # get the page title
             title = page.find(namespace + 'title').text
             titles.append(title)
-            #get the page id(integer)
+            # get the page id(integer)
             ids.append(int(page.find(namespace + 'id').text))
 
-            #the text element is always a child of the revision child of the wikia pages
+            # the text element is always a child of the revision child of the wikia pages
             revision = page.find(namespace + 'revision')
             text = revision.find(namespace + 'text').text
             # if there is text, concat and then add the title and text to the text stream for the given page.
@@ -95,7 +59,7 @@ def create(stopwords, collection, inverted_index, title_index):
                 text = list(filter(None, text))
                 text = [stemmer.stem(word) for word in text]
                 texts.append(text)
-            #if there is no text, do the same thing as above, except only add the title to the stream of text
+            # if there is no text, do the same thing as above, except only add the title to the stream of text
             else:
                 text = title.lower()
                 text = pattern.sub(' ', text)
@@ -105,36 +69,32 @@ def create(stopwords, collection, inverted_index, title_index):
                 text = list(filter(None, text))
                 text = [stemmer.stem(word) for word in text]
                 texts.append(text)
-
             # update the pages list with the tuple for the given page
-            pages.append((ids,titles,texts))
+            pages.append((ids, titles, texts))
+        return pages
 
-
-
-
-
-    #Same as above, only for case where there is no namespace (don't contend with revision tag)
-    if namespace == '' :
+    # Same as above, only for case where there is no namespace (don't contend with revision tag)
+    if namespace == '':
         for page in tree.findall('page'):
-            #initiate empty lists to contain the page title, page id, and page text for
-            #each page
+            # initiate empty lists to contain the page title, page id, and page text for
+            # each page
 
             titles = []
             ids = []
             texts = []
 
-            #get the page title
+            # get the page title
             title = page.find('title').text
             titles.append(title)
 
-            #get the page id(integer)
+            # get the page id(integer)
             ids.append(int(page.find('id').text))
 
-            #Get the text form the page
+            # Get the text form the page
             text = page.find('text').text
 
-            #if there is text, concat and then add the title and text to the text stream for the given page.
-            #The text stream is a list of words that have been removed of stop words and stemmed
+            # if there is text, concat and then add the title and text to the text stream for the given page.
+            # The text stream is a list of words that have been removed of stop words and stemmed
             if text != None:
                 text = title.lower() + '\n' + text.lower()
                 text = pattern.sub(' ', text)
@@ -144,7 +104,7 @@ def create(stopwords, collection, inverted_index, title_index):
                 text = list(filter(None, text))
                 text = [stemmer.stem(word) for word in text]
                 texts.append(text)
-            #if there is no text, do the same thing as above, except only add the title to the stream of text
+            # if there is no text, do the same thing as above, except only add the title to the stream of text
             else:
                 text = title.lower()
                 text = pattern.sub(' ', text)
@@ -154,17 +114,52 @@ def create(stopwords, collection, inverted_index, title_index):
                 text = list(filter(None, text))
                 text = [stemmer.stem(word) for word in text]
                 texts.append(text)
+            # update the pages list with the tuple for the given page
+            pages.append((ids, titles, texts))
+        return pages
 
-            #update the pages list with the tuple for the given page
-            pages.append((ids,titles,texts))
+#start_time=time.time()
 
+parser = argparse.ArgumentParser()
+parser.add_argument('stopwords')
+parser.add_argument('collection')
+parser.add_argument('index')
+parser.add_argument('title')
+
+
+args = parser.parse_args()
+
+stopwords = args.stopwords
+collection = args.collection
+inverted_index = args.index
+title_index = args.title
+
+def create(stopwords, collection, inverted_index, title_index):
+
+    # initate the xml tree
+    try:
+        tree = ET.parse(collection)
+    except ET.ParseError:
+        print("ERROR: Bad XML File encountered. Exiting...")
+        exit()
+
+    root = tree.getroot()
+    #default
+    namespace = ''
+    #get the namespace from the xml
+    if bool(root.attrib):
+        start = root.tag.find('{')
+        end = root.tag.find('}') + 1
+        namespace = root.tag[start:end]
+
+    pages = page_list(namespace,tree, stopwords)
 
     #create the dictionaries of titles and words(from text) to be populated
     #with the elements of pages.
 
     #title_dict will have page ids as keys and corresponding page titles as values
     #word_dict will have filtered/stemmed words from page text as keys and dictionaries as values
-        #these dictionaries will have page ids as keys and the words location in the page as values
+    #these dictionaries will have page ids as keys and the words location in the page as values
     word_dict = {}
     title_dict = {}
     tf = {}
@@ -207,6 +202,6 @@ def create(stopwords, collection, inverted_index, title_index):
     json.dump(tf,tf_in)
     tf_in.close()
 
-print("Took: %s seconds to run."% (time.time()-start_time))
+#print("Took: %s seconds to run."% (time.time()-start_time))
 
 create(stopwords, collection, inverted_index, title_index)
