@@ -252,8 +252,7 @@ class Query:
         tf_vector=[]
         #print('tokens:',tokens, "docID:",str(docID))
         for token in tokens:
-            #print(tf_index[token])
-            #print('tf_idnex[token]str(Docid)',tf_index[token][str(docID)])
+            print('tf_idnex[token]str(Docid)',tf_index[token][str(docID)])
             if(str(docID) in tf_index[token].keys()):
                 tf_vector.append(tf_index[token][str(docID)])
             else: tf_vector.append(0)

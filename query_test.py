@@ -72,6 +72,15 @@ def test_small_queries():
     results=query4.match(inverted,'stopwords.dat',titleDict,tf_index,idf_index)
     assert results==[(0, 0.9941370743997096), (3, 0.9941370743997096), (12, 0.7794184970625834), (2, 0.6265036364113967), (8, 0.6265036364113967)]
 
+def test_get_tokens():
+    query1 = QC.QueryFactory.create('Space OR 2001')
+    bool_exp=QC.clean(QC.bool_expr_ast('Space OR 2001'),'stopwords.dat')
+    assert query1.getTokens(bool_exp)==['space','2001']
+
+    query2 = QC.QueryFactory.create('(Space OR 2001) AND clockwork OR odyessy')
+    bool_exp=QC.clean(QC.bool_expr_ast('(Space OR 2001) AND clockwork OR odyessy'),'stopwords.dat')
+    assert query2.getTokens(bool_exp)==['space','2001','clockwork','odyessi']
+
 def test_query_factory():
     query1 = QC.QueryFactory.create('SpACe.')
     assert isinstance(query1,QC.OneWordQuery)==True
@@ -85,3 +94,29 @@ def test_query_factory():
     assert isinstance(query5,QC.BooleanQuery)==True
 
 #print(QC.clean("nemo AND fish",'stopwords.dat')[0])
+
+def test_calc_doc_weight():
+    file=open("tf_index.json",'r')
+    tf_index=json.load(file)
+    file.close()
+
+    file=open("idf_index.json",'r')
+    idf_index=json.load(file)
+    file.close()
+    query1 = QC.QueryFactory.create('"killer kiss"')
+    tokens = QC.filter_and_stem(['killer','kiss'],'stopwords.dat')
+    assert tokens==['killer','kiss']
+    idf_vector=[float(idf_index[x]) for x in tokens]
+    doc4_weight=query1.calcDocWeight(tokens,'4',tf_index,idf_vector)
+    assert doc4_weight==0.9927038337834337
+    doc5_weight=query1.calcDocWeight(tokens,'5',tf_index,idf_vector)
+    assert doc5_weight==0.9927038337834337
+
+    # query2 = QC.QueryFactory.create('(2001 OR space) AND odyssey')
+    # bool_exp=QC.clean(QC.bool_expr_ast('(2001 OR space) AND odyssey'),'stopwords.dat')
+    # assert query2.getTokens(bool_exp)==['2001','space','odyssey']
+    # idf_vector=[float(idf_index[x]) for x in tokens]
+    # doc0_weight=query2.calcDocWeight(tokens,0,tf_index,idf_vector)
+    # assert doc0_weight==0.9927038337834337
+    # doc3_weight=query2.calcDocWeight(tokens,3,tf_index,idf_vector)
+    # assert doc3_weight==0.9927038337834337
