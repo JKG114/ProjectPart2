@@ -1,4 +1,1 @@
-{
-  "query_test.py::test_calc_doc_weight": true,
-  "query_test.py::test_small_queries": true
-}
+{}

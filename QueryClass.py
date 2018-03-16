@@ -252,11 +252,9 @@ class Query:
         tf_vector=[]
         #print('tokens:',tokens, "docID:",str(docID))
         for token in tokens:
-            print('tf_idnex[token]str(Docid)',tf_index[token][str(docID)])
             if(str(docID) in tf_index[token].keys()):
                 tf_vector.append(tf_index[token][str(docID)])
             else: tf_vector.append(0)
-
         tf_mag=0
         idf_mag=0
         for i in range(len(tf_vector)):
@@ -269,7 +267,6 @@ class Query:
         tf_vector=[(x/tf_mag) for x in tf_vector]
 
         return sum([x*y for x,y in zip(tf_vector,idf_vector)])
-
 
 
 # YOUR ONEWORDQUERY CLASS BELOW

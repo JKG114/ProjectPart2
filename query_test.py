@@ -112,11 +112,12 @@ def test_calc_doc_weight():
     doc5_weight=query1.calcDocWeight(tokens,'5',tf_index,idf_vector)
     assert doc5_weight==0.9927038337834337
 
-    # query2 = QC.QueryFactory.create('(2001 OR space) AND odyssey')
-    # bool_exp=QC.clean(QC.bool_expr_ast('(2001 OR space) AND odyssey'),'stopwords.dat')
-    # assert query2.getTokens(bool_exp)==['2001','space','odyssey']
-    # idf_vector=[float(idf_index[x]) for x in tokens]
-    # doc0_weight=query2.calcDocWeight(tokens,0,tf_index,idf_vector)
-    # assert doc0_weight==0.9927038337834337
-    # doc3_weight=query2.calcDocWeight(tokens,3,tf_index,idf_vector)
-    # assert doc3_weight==0.9927038337834337
+    query2 = QC.QueryFactory.create('(2001 OR space) AND odyssey')
+    bool_exp=QC.clean(QC.bool_expr_ast('(2001 OR space) AND odyssey'),'stopwords.dat')
+    tokens2=query2.getTokens(bool_exp)
+    assert tokens2==['2001','space','odyssey']
+    idf_vector=[float(idf_index[x]) for x in tokens2]
+    doc0_weight=query2.calcDocWeight(tokens2,'0',tf_index,idf_vector)
+    assert doc0_weight==0.9826307737901492
+    doc3_weight=query2.calcDocWeight(tokens2,'3',tf_index,idf_vector)
+    assert doc3_weight==0.9826307737901492
