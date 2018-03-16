@@ -66,7 +66,7 @@ def query(stopwords, inverted_index, title):
                 print(*id_list)
 
         except EOFError:  # Catch the Ctrl-D
-            print ('\n')
+            #print ('\n')
             break
         except:  # Trap all other errors
             print('')

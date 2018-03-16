@@ -391,8 +391,22 @@ class BooleanQuery(Query):
     def match(self, index, stopwords, title, tf_index, idf_index):
 
         # Converty the Query to AST
+        count=0
+        for c in self.query:
+            if c=='(':
+                count+=1
+            if c==')':
+                count-=1
+            if count<0:
+                print("ERROR: Boolean query '"+self.query+"' could not be parsed, mismatching parantheses",end='')
+                return None
+        if count!=0:
+            print("ERROR: Boolean query '"+self.query+"' could not be parsed, mismatching parantheses",end='')
+            return None
         bool_exp = bool_expr_ast(self.query)
-        print(bool_exp)
+        if bool_exp==self.query.strip() or not bool_exp:
+            print("ERROR: Boolean query '"+self.query+"' could not be parsed.",end='')
+            return None
         # Clean the query (remove stopwords, stem, etc.)
         bool_exp = clean(bool_exp, stopwords)
         queries=self.getTokens(bool_exp)

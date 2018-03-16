@@ -14,9 +14,6 @@ parser.add_argument('stopwords')
 parser.add_argument('collection')
 parser.add_argument('index')
 parser.add_argument('title')
-parser.add_argument('-t',action='store_true')
-parser.add_argument('-v',action='store_true')
-
 
 args = parser.parse_args()
 
