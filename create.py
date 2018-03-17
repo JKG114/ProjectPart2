@@ -7,6 +7,18 @@ from math import *
 import time
 import argparse
 
+def get_namespace(root):
+    #takes in a tree root of an xml and returns its namespace, if there is one.
+
+    # default case
+    namespace = ''
+    # get the namespace from the xml
+    if bool(root.attrib):
+        start = root.tag.find('{')
+        end = root.tag.find('}') + 1
+        namespace = root.tag[start:end]
+    return namespace
+
 def page_list(namespace, tree, stopwords):
     # takes a namespace, a tree, and the stopwords file path
     # Returns a list, pages, that will contain tuples of ids,titles,texts from each page in the xml document
@@ -120,19 +132,41 @@ def page_list(namespace, tree, stopwords):
 
 #start_time=time.time()
 
-parser = argparse.ArgumentParser()
-parser.add_argument('stopwords')
-parser.add_argument('collection')
-parser.add_argument('index')
-parser.add_argument('title')
+def create_dicts(pages):
+    #create the dictionaries of titles, words(from text), adn term frequencies to be populated
+    #with the elements of pages.
 
+    #title_dict will have page ids as keys and corresponding page titles as values
+    #word_dict (for the inverted index) will have filtered/stemmed words from page text as keys and
+    # dictionaries as values these dictionaries will have page ids as keys and the words location in the
+    #page as values. Finally, the tf, and idf dicts will have term frequencies and idf scores
+    word_dict = {}
+    title_dict = {}
+    tf = {}
 
-args = parser.parse_args()
+    for page in pages:
+        words = page[2][0]
+        id = page[0][0]
+        # add id/title to title_dict
+        title_dict[id] = page[1][0]
+        for loc in range(len(words)):
+            if words[loc] in word_dict.keys():
+                if id in word_dict[words[loc]].keys():
+                    word_dict[words[loc]][id].append(loc)
+                    tf[words[loc]][id] += 1
+                else:
+                    word_dict[words[loc]][id] = [loc]
+                    tf[words[loc]][id] = 1
+            else:
+                word_dict[words[loc]] = {id: [loc]}
+                tf[words[loc]] = {id: 1}
 
-stopwords = args.stopwords
-collection = args.collection
-inverted_index = args.index
-title_index = args.title
+    idf = {}
+    N = len(title_dict)
+    for word in word_dict.keys():
+        idf[word] = log10(N / len(word_dict[word].keys()))
+    dicts = [word_dict, title_dict, tf, idf]
+    return dicts
 
 def create(stopwords, collection, inverted_index, title_index):
 
@@ -144,47 +178,18 @@ def create(stopwords, collection, inverted_index, title_index):
         exit()
 
     root = tree.getroot()
-    #default
-    namespace = ''
+
     #get the namespace from the xml
-    if bool(root.attrib):
-        start = root.tag.find('{')
-        end = root.tag.find('}') + 1
-        namespace = root.tag[start:end]
+    namespace = get_namespace(root)
 
     pages = page_list(namespace,tree, stopwords)
 
-    #create the dictionaries of titles and words(from text) to be populated
-    #with the elements of pages.
 
-    #title_dict will have page ids as keys and corresponding page titles as values
-    #word_dict will have filtered/stemmed words from page text as keys and dictionaries as values
-    #these dictionaries will have page ids as keys and the words location in the page as values
-    word_dict = {}
-    title_dict = {}
-    tf = {}
-
-    for page in pages:
-        words = page[2][0]
-        id = page[0][0]
-        # add id/title to title_dict
-        title_dict[id]= page[1][0]
-        for loc in range(len(words)):
-            if words[loc] in word_dict.keys():
-                    if id in word_dict[words[loc]].keys():
-                        word_dict[words[loc]][id].append(loc)
-                        tf[words[loc]][id]+=1
-                    else:
-                        word_dict[words[loc]][id] = [loc]
-                        tf[words[loc]][id]=1
-            else:
-                word_dict[words[loc]]= {id: [loc]}
-                tf[words[loc]]={id: 1}
-
-    idf = {}
-    N=len(title_dict)
-    for word in word_dict.keys():
-        idf[word]=log10(N/len(word_dict[word].keys()))
+    dicts = create_dicts(pages)
+    word_dict = dicts[0]
+    title_dict = dicts[1]
+    tf = dicts[2]
+    idf = dicts[3]
 
     inverted = open(inverted_index, 'w')
     json.dump(word_dict, inverted)
@@ -203,5 +208,17 @@ def create(stopwords, collection, inverted_index, title_index):
     tf_in.close()
 
 #print("Took: %s seconds to run."% (time.time()-start_time))
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('stopwords')
+    parser.add_argument('collection')
+    parser.add_argument('index')
+    parser.add_argument('title')
 
-create(stopwords, collection, inverted_index, title_index)
+    args = parser.parse_args()
+
+    stopwords = args.stopwords
+    collection = args.collection
+    inverted_index = args.index
+    title_index = args.title
+    create(stopwords, collection, inverted_index, title_index)
