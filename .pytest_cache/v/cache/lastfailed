@@ -1,5 +1,4 @@
 {
   "query.py": true,
-  "query_test.py::test_bad_queries": true,
   "repl_test.py": true
 }

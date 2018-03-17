@@ -19,7 +19,7 @@ file.close()
 
 def test_filter_and_stem():
     #tests the parsing
-    assert QC.filter_and_stem('the a','stopwords.dat')==[]
+    assert QC.filter_and_stem('the a','stopwords.dat')==[None]
     assert QC.filter_and_stem(['2001','space','odyessy'],'stopwords.dat')==['2001','space','odyessi']
     assert QC.filter_and_stem(['Nemo','BOB','hEllO'],'stopwords.dat')==['nemo','bob','hello']
 
@@ -80,6 +80,20 @@ def test_get_tokens():
     query2 = QC.QueryFactory.create('(Space OR 2001) AND clockwork OR odyessy')
     bool_exp=QC.clean(QC.bool_expr_ast('(Space OR 2001) AND clockwork OR odyessy'),'stopwords.dat')
     assert query2.getTokens(bool_exp)==['space','2001','clockwork','odyessi']
+
+def test_bad_queries():
+    query1 = QC.QueryFactory.create('the')
+    results=query1.match(inverted,'stopwords.dat',titleDict,tf_index,idf_index)
+    assert results is None
+    query2 = QC.QueryFactory.create('"the a"')
+    results2=query2.match(inverted,'stopwords.dat',titleDict,tf_index,idf_index)
+    assert results2 is None
+    query3 = QC.QueryFactory.create('the the a')
+    results3=query3.match(inverted,'stopwords.dat',titleDict,tf_index,idf_index)
+    assert results3 is None
+    query4 = QC.QueryFactory.create('(space OR')
+    results4=query4.match(inverted,'stopwords.dat',titleDict,tf_index,idf_index)
+    assert results4 is None
 
 def test_query_factory():
     query1 = QC.QueryFactory.create('SpACe.')

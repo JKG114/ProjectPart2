@@ -107,6 +107,7 @@ def filter_and_stem(queries, stopwords):
     queries = [stemmer.stem(query_word) for query_word in queries]
     if not queries:
         print("ERROR: Query only contained stopwords/non-alphanumerics",end='')
+        return [None]
     return(queries)
 
 
@@ -280,7 +281,8 @@ class OneWordQuery(Query):
         query_string = self.query.lower()
         # Remove non-alphanumeric characters
         query_string = filter_and_stem([query_string],stopwords)[0]
-
+        if not query_string or query_string==[None]:
+            return None
         idf_vector=[float(idf_index[query_string])]
 
         if query_string == '':
@@ -311,6 +313,8 @@ class FreeTextQuery(Query):
 
         # filter stop words and stem
         queries = filter_and_stem(queries, stopwords)
+        if not queries or queries==[None]:
+            return None
         # take the query words in the index and get the set of corresponding page ids
         queries = [query_word for query_word in queries if query_word in index.keys()]
 
@@ -350,6 +354,9 @@ class PhraseQuery(Query):
         queries = filter_and_stem(queries, stopwords)
 
         #old_idf_vector=self.calcQueryWeight(index,title,queries)
+        if not queries or queries==[None]:
+            return None
+
         idf_vector=[float(idf_index[x]) for x in queries]
         dicts = [index[query_word] for query_word in queries]
 
