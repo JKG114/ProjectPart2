@@ -33,7 +33,6 @@ def test_page_small_list():
     stopwords = "stopwords.dat"
     namespace = ''
     pages = page_list(namespace,tree, stopwords)
-    print(pages[0])
     #test page id
     assert pages[0][0] == [0]
     assert pages[2][0] == [2]
@@ -50,7 +49,6 @@ def test_create_small_dicts():
     pages = page_list(namespace, tree, stopwords)
     dicts = create_dicts(pages)
     word_dict = dicts[0]
-    print(word_dict['2001'][3])
     title_dict = dicts[1]
     tf = dicts[2]
     idf = dicts[3]
