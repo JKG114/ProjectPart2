@@ -24,6 +24,8 @@ python3 query.py stopwords index title [-t] [-v]
 ### Running tets:
 To run tests for create.py:
 ```
+python create.py stopwords.dat small.xml small_index.json small_title.json
+python create.py stopwords.dat pixar_pages_current.xml pixar_index.json pixar_title.json
 pytest test_create.py
 ```
 
