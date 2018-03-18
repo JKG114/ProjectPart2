@@ -24,7 +24,7 @@ python3 query.py stopwords index title [-t] [-v]
 ### Running tets:
 To run tests for create.py:
 ```
-pytest create_test.py
+pytest test_create.py
 ```
 
 To run tests for query.py, first need to run create.py for the small dataset.
